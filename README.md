@@ -1,7 +1,8 @@
 # MotoMediaLab Connector
 
 [![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](https://choosealicense.com/licenses/mit/)
-[![Latest Version](https://img.shields.io/github/v/release/motomedialab/connector)](https://github.com/motomedialab/connector/releases)
+[![Latest Version on Packagist](https://img.shields.io/packagist/v/motomedialab/connector.svg?style=flat-square)](https://packagist.org/packages/motomedialab/connector)
+[![Total Downloads](https://img.shields.io/packagist/dt/motomedialab/connector.svg?style=flat-square)](https://packagist.org/packages/motomedialab/connector)
 [![Tests](https://github.com/motomedialab/connector/actions/workflows/tests.yml/badge.svg)](https://github.com/motomedialab/connector/actions/workflows/tests.yml)
 
 A super lightweight, opinionated connector pattern for Laravel to make light work of consuming third-party APIs.
