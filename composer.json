@@ -1,0 +1,48 @@
+{
+  "name": "motomedialab/connector",
+  "description": "A super lightweight request/connector pattern to make light work of API authentication and calls",
+  "version": "1.0.0",
+  "keywords": [
+    "connector",
+    "request-pattern",
+    "laravel-http",
+    "guzzle",
+    "motomedialab"
+  ],
+  "homepage": "https://github.com/motomedialab/connector",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Chris Page",
+      "email": "hello@motomedialab.com",
+      "role": "Developer"
+    }
+  ],
+  "require": {
+    "php": "^8.2",
+    "laravel/framework": "^11.0|^12.0"
+  },
+  "require-dev": {
+    "larastan/larastan": "^2.0|^3.0",
+    "laravel/pint": "^v1.23",
+    "orchestra/testbench": "^9.0|^10.0",
+    "pestphp/pest": "^2.0|^3.0|^4.0"
+  },
+  "autoload": {
+    "psr-4": {
+      "Motomedialab\\Connector\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Motomedialab\\Connector\\": "src/",
+      "Motomedialab\\Connector\\Tests\\": "tests/"
+    }
+  },
+  "config": {
+    "sort-packages": true,
+    "allow-plugins": {
+      "pestphp/pest-plugin": true
+    }
+  }
+}
