@@ -1,7 +1,7 @@
 {
   "name": "motomedialab/connector",
   "description": "A super lightweight request/connector pattern to make light work of API authentication and calls",
-  "version": "1.0.0",
+  "version": "1.1.1",
   "keywords": [
     "connector",
     "request-pattern",
