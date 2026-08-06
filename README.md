@@ -189,9 +189,26 @@ $request = new ExamplePostRequest(['name' => 'Chris']);
 $response = $connector->send($request);
 ```
 
+### Retrying Requests
+
+You can automatically retry failed requests using `sendAndRetry()`:
+
+```php
+// Retry up to 3 times with a 500ms delay between attempts
+$response = $connector->sendAndRetry($request, times: 3, sleepMs: 500);
+
+// You can also pass an optional $when callback to control when retries should occur
+$response = $connector->sendAndRetry(
+    $request,
+    times: 3,
+    sleepMs: 500,
+    when: fn (Throwable $exception) => $exception instanceof ConnectionException
+);
+```
+
 ### Asynchronous Requests
 
-You can also send requests concurrently using the `sendAsync()` method. This is great for
+You can also send requests concurrently using `sendAsync()` or `sendAndRetryAsync()`. This is great for
 performance when you need to make multiple independent API calls.
 
 ```php
@@ -206,9 +223,9 @@ $requests = [
     new ExampleGetRequest('user-3'),
 ];
 
-// Map requests to promises
+// Map requests to promises (with optional retry support)
 $promises = array_map(
-    fn($request) => $connector->sendAsync($request),
+    fn($request) => $connector->sendAndRetryAsync($request, times: 3, sleepMs: 500),
     $requests
 );
 

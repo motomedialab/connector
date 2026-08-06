@@ -82,3 +82,54 @@ describe('post requests', function () {
         expect($response)->toBe(['code' => 422, 'success' => false]);
     });
 });
+
+describe('retry and async tests', function () {
+    it('retries failing sync requests', function () {
+        Http::fake([
+            'https://api.example.com/v2/getEndpoint' => Http::sequence()
+                ->pushStatus(500)
+                ->pushStatus(200),
+        ]);
+
+        $connector = new Stubs\Connectors\TestConnector();
+        $response = $connector->sendAndRetry(
+            new Stubs\Requests\GetRequest(),
+            times: 2,
+            sleepMs: 10,
+            when: fn ($exception) => true
+        );
+
+        expect($response)->toBeTrue();
+        Http::assertSentCount(2);
+    });
+
+    it('handles async requests', function () {
+        Http::fake(['https://api.example.com/v2/getEndpoint' => Http::response()]);
+
+        $connector = new Stubs\Connectors\TestConnector();
+        $promise = $connector->sendAsync(new Stubs\Requests\GetRequest());
+        $response = $promise->wait();
+
+        expect($response)->toBeTrue();
+    });
+
+    it('retries failing async requests', function () {
+        Http::fake([
+            'https://api.example.com/v2/getEndpoint' => Http::sequence()
+                ->pushStatus(500)
+                ->pushStatus(200),
+        ]);
+
+        $connector = new Stubs\Connectors\TestConnector();
+        $promise = $connector->sendAndRetryAsync(
+            new Stubs\Requests\GetRequest(),
+            times: 2,
+            sleepMs: 10,
+            when: fn ($exception) => true
+        );
+        $response = $promise->wait();
+
+        expect($response)->toBeTrue();
+        Http::assertSentCount(2);
+    });
+});
