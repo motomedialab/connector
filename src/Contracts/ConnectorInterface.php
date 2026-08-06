@@ -52,5 +52,7 @@ interface ConnectorInterface
 
     public function apiUrl(): string;
 
+    public function userAgent(): string;
+
     public function generateUrl(RequestInterface $request): string;
 }

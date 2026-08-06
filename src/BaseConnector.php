@@ -18,7 +18,7 @@ abstract class BaseConnector implements ConnectorInterface
     /**
      * @template TResponse
      *
-     * @param RequestInterface<TResponse> $request
+     * @param  RequestInterface<TResponse>  $request
      * @return TResponse
      *
      * @throws ConnectionException
@@ -31,10 +31,10 @@ abstract class BaseConnector implements ConnectorInterface
     /**
      * @template TResponse
      *
-     * @param RequestInterface<TResponse> $request
-     * @param int $times The number of times the request should be retried
-     * @param int $sleepMs The number of milliseconds to wait between requests
-     * @param (callable(Throwable, PendingRequest): bool)|null $when The callback that will determine if the request should be retried.
+     * @param  RequestInterface<TResponse>  $request
+     * @param  int  $times  The number of times the request should be retried
+     * @param  int  $sleepMs  The number of milliseconds to wait between requests
+     * @param  (callable(Throwable, PendingRequest): bool)|null  $when  The callback that will determine if the request should be retried.
      * @return TResponse
      *
      * @throws ConnectionException
@@ -53,7 +53,7 @@ abstract class BaseConnector implements ConnectorInterface
     /**
      * @template TResponse
      *
-     * @param RequestInterface<TResponse> $request
+     * @param  RequestInterface<TResponse>  $request
      *
      * @throws ConnectionException
      */
@@ -65,10 +65,10 @@ abstract class BaseConnector implements ConnectorInterface
     /**
      * @template TResponse
      *
-     * @param RequestInterface<TResponse> $request
-     * @param int $times The number of times the request should be retried
-     * @param int $sleepMs The number of milliseconds to wait between requests
-     * @param (callable(Throwable, PendingRequest): bool)|null $when The callback that will determine if the request should be retried.
+     * @param  RequestInterface<TResponse>  $request
+     * @param  int  $times  The number of times the request should be retried
+     * @param  int  $sleepMs  The number of milliseconds to wait between requests
+     * @param  (callable(Throwable, PendingRequest): bool)|null  $when  The callback that will determine if the request should be retried.
      *
      * @throws ConnectionException
      */
@@ -87,15 +87,20 @@ abstract class BaseConnector implements ConnectorInterface
     public function generateUrl(RequestInterface $request): string
     {
         $query = http_build_query($request->queryParams());
-        $url = $this->apiUrl() . $request->endpoint();
+        $url = $this->apiUrl().$request->endpoint();
 
-        return $query ? $url . '?' . $query : $url;
+        return $query ? $url.'?'.$query : $url;
+    }
+
+    public function userAgent(): string
+    {
+        return 'Motomedialab/Connector';
     }
 
     protected function prepareRequest(RequestInterface $request, int $times = 1, int $sleepMs = 0, ?callable $when = null): PendingRequest
     {
         return Http::withHeaders($request->headers())
-            ->withHeader('User-Agent', 'MotoMediaLab/Connector')
+            ->withHeader('User-Agent', $this->userAgent())
             ->when($request->authenticated(), $this->authenticateRequest(...))
             ->when($times > 1, fn (PendingRequest $pending) => $pending->retry($times, $sleepMs, $when))
             ->timeout($request->timeout());
