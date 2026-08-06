@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Motomedialab\Connector;
 
+use Throwable;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
 use GuzzleHttp\Promise\PromiseInterface;
@@ -24,7 +25,23 @@ abstract class BaseConnector implements ConnectorInterface
      */
     public function send(RequestInterface $request): mixed
     {
-        $response = $this->prepareRequest($request)->send(
+        return $this->sendAndRetry($request, 1);
+    }
+
+    /**
+     * @template TResponse
+     *
+     * @param  RequestInterface<TResponse>  $request
+     * @param  int  $times  The number of times the request should be retried
+     * @param  int  $sleepMs  The number of milliseconds to wait between requests
+     * @param  (callable(Throwable, PendingRequest): bool)|null  $when  The callback that will determine if the request should be retried.
+     * @return TResponse
+     *
+     * @throws ConnectionException
+     */
+    public function sendAndRetry(RequestInterface $request, int $times = 3, int $sleepMs = 500, ?callable $when = null): mixed
+    {
+        $response = $this->prepareRequest($request, $times, $sleepMs, $when)->send(
             $request->method()->value,
             $this->generateUrl($request),
             $this->prepareBody($request),
@@ -42,7 +59,22 @@ abstract class BaseConnector implements ConnectorInterface
      */
     public function sendAsync(RequestInterface $request): PromiseInterface
     {
-        return $this->prepareRequest($request)
+        return $this->sendAndRetryAsync($request, 1);
+    }
+
+    /**
+     * @template TResponse
+     *
+     * @param  RequestInterface<TResponse>  $request
+     * @param  int  $times  The number of times the request should be retried
+     * @param  int  $sleepMs  The number of milliseconds to wait between requests
+     * @param  (callable(Throwable, PendingRequest): bool)|null  $when  The callback that will determine if the request should be retried.
+     *
+     * @throws ConnectionException
+     */
+    public function sendAndRetryAsync(RequestInterface $request, int $times = 3, int $sleepMs = 500, ?callable $when = null): PromiseInterface
+    {
+        return $this->prepareRequest($request, $times, $sleepMs, $when)
             ->async()
             ->send(
                 $request->method()->value,
@@ -60,11 +92,17 @@ abstract class BaseConnector implements ConnectorInterface
         return $query ? $url.'?'.$query : $url;
     }
 
-    protected function prepareRequest(RequestInterface $request): PendingRequest
+    public function userAgent(): string
+    {
+        return 'Motomedialab/Connector';
+    }
+
+    protected function prepareRequest(RequestInterface $request, int $times = 1, int $sleepMs = 0, ?callable $when = null): PendingRequest
     {
         return Http::withHeaders($request->headers())
-            ->withHeader('User-Agent', 'MotoMediaLab/Connector')
+            ->withHeader('User-Agent', $this->userAgent())
             ->when($request->authenticated(), $this->authenticateRequest(...))
+            ->when($times > 1, fn (PendingRequest $pending) => $pending->retry($times, $sleepMs, $when))
             ->timeout($request->timeout());
     }
 
