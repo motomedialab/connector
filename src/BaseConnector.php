@@ -81,7 +81,7 @@ abstract class BaseConnector implements ConnectorInterface
                 $this->generateUrl($request),
                 $this->prepareBody($request)
             )
-            ->then(fn(Response $response) => $request->toResponse($response));
+            ->then(fn (Response $response) => $request->toResponse($response));
     }
 
     public function generateUrl(RequestInterface $request): string
@@ -97,13 +97,13 @@ abstract class BaseConnector implements ConnectorInterface
         return Http::withHeaders($request->headers())
             ->withHeader('User-Agent', 'MotoMediaLab/Connector')
             ->when($request->authenticated(), $this->authenticateRequest(...))
-            ->when($times > 1, fn(PendingRequest $pending) => $pending->retry($times, $sleepMs, $when))
+            ->when($times > 1, fn (PendingRequest $pending) => $pending->retry($times, $sleepMs, $when))
             ->timeout($request->timeout());
     }
 
     protected function prepareBody(RequestInterface $request): array
     {
-        $contentType = collect($request->headers())->first(fn($value, $key) => strtolower($key) === 'content-type') ?? 'application/json';
+        $contentType = collect($request->headers())->first(fn ($value, $key) => strtolower($key) === 'content-type') ?? 'application/json';
 
         $bodyType = match (true) {
             str_contains($contentType, 'form') => 'form_params',
