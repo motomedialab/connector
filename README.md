@@ -55,6 +55,88 @@ class ExampleConnector extends BaseConnector
 }
 ```
 
+#### OAuth / Client Credentials Authentication
+
+When authenticating via OAuth (e.g., Client Credentials flow), create an unauthenticated `ClientCredentialsRequest` and resolve access tokens dynamically (with caching) inside `authenticateRequest()`:
+
+```php
+// app/Requests/ClientCredentialsRequest.php
+use Illuminate\Http\Client\Response;
+use Motomedialab\Connector\BaseRequest;
+use Motomedialab\Connector\Enums\RequestMethod;
+use Motomedialab\Connector\Contracts\RequestInterface;
+
+/**
+ * @implements RequestInterface<array{token_type: string, access_token: string, expires_in: int}>
+ */
+readonly class ClientCredentialsRequest extends BaseRequest implements RequestInterface
+{
+    public function method(): RequestMethod
+    {
+        return RequestMethod::POST;
+    }
+
+    public function endpoint(): string
+    {
+        return 'oauth/token';
+    }
+
+    // Mark as unauthenticated so the connector doesn't loop authentication
+    public function authenticated(): bool
+    {
+        return false;
+    }
+
+    public function body(): array
+    {
+        return [
+            'grant_type' => 'client_credentials',
+            'client_id' => config('services.api.client_id'),
+            'client_secret' => config('services.api.client_secret'),
+            'scope' => config('services.api.scopes'),
+        ];
+    }
+
+    public function toResponse(Response $response): array
+    {
+        if ($response->ok()) {
+            return $response->json();
+        }
+
+        throw new Exception('Failed to fetch client_credentials token. Status code: ' . $response->status());
+    }
+}
+```
+
+Then consume `ClientCredentialsRequest` within your `Connector`:
+
+```php
+// app/Connectors/ExampleConnector.php
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Http\Client\PendingRequest;
+use Motomedialab\Connector\BaseConnector;
+use App\Requests\ClientCredentialsRequest;
+
+class ExampleConnector extends BaseConnector
+{
+    public function apiUrl(): string
+    {
+        return 'https://api.example.com/v2/';
+    }
+
+    public function authenticateRequest(PendingRequest $request): PendingRequest
+    {
+        $token = Cache::remember('api_oauth_token', 3600, function () {
+            $data = $this->send(new ClientCredentialsRequest());
+
+            return $data['access_token'];
+        });
+
+        return $request->withToken($token);
+    }
+}
+```
+
 ### Requests
 
 The `Request` defines the specific details of an API call, such as the endpoint, method, headers, 
@@ -174,6 +256,21 @@ readonly class ExamplePostRequest extends BaseRequest implements RequestInterfac
     }
 }
 ```
+
+#### HTTP Methods & Payload Formats
+
+1. **HTTP Methods (`RequestMethod`)**: Set the HTTP verb via `method()`. Defaults to `GET`.
+   - `RequestMethod::GET`
+   - `RequestMethod::POST`
+   - `RequestMethod::PUT`
+   - `RequestMethod::PATCH`
+   - `RequestMethod::DELETE`
+
+2. **Body Payload Formats**: The connector automatically maps `$this->body()` based on the request's `Content-Type` header:
+   - **JSON (`application/json`)**: Default behavior.
+   - **Form (`application/x-www-form-urlencoded`)**: Form URL-encoded data.
+   - **Multipart (`multipart/form-data`)**: File uploads and form data.
+   - **XML / Plain (`application/xml`, `text/plain`)**: Raw body payload.
 
 ## Usage
 
